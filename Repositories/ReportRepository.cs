@@ -8,27 +8,27 @@ public class ReportRepository: IReportRepository
     private static readonly ReportComparer Comparer = new();
     private static readonly List<Report> Reports = new();
 
-    public Report CreateReport(string serviceName, string folderPath)
+    public Report CreateReport(string serviceName, string folderPath)   // why and why...
     {
         var report = new Report();
         // logic !!!!!!!!!!!
-        LogsHandle(FileManager.GetLogFiles(folderPath, serviceName));
+        HandleLogs(FileManager.GetLogFiles(folderPath, serviceName));
         // logic !!!!!!!!!!!
         Reports.Add(report);
         SortList();
         return report;
     }
 
-    private void LogsHandle(List<string> files)
+    public IReadOnlyList<Report> GetAllReportsByServiceName(string serviceName, string folderPath)
     {
-        
+        HandleLogs(FileManager.GetLogFiles(folderPath, serviceName));
+        return Reports;
     }
 
     public IReadOnlyList<Report> GetAllReports()
     {
         return Reports;
     }
-
     public void ReadJsonFile()
     {
         //_reportRepositoryImplementation.ReadJsonFile();
@@ -44,6 +44,38 @@ public class ReportRepository: IReportRepository
         Reports.Clear();
     }
 
+    private void HandleLogs(List<string> files)
+    {
+        if (files.Count > 0)
+        {
+            var parts = files[0].Split('.');
+            var serviceName = parts[0];
+            if (!int.TryParse(parts[1], out var rotationNumber))
+            {
+                rotationNumber = 0;
+            }
+
+            // need to open each file and get all written logs, parse them,
+            // get first and last dates and check categories and handle their count
+            
+            var report = new Report()
+            {
+                ServiceName = serviceName,
+                FirstReportDate = DateTime.Today,                   // change!!!
+                LastReportDate = DateTime.Today,                    // change!!!
+                NumberOfReports = new Dictionary<string, int>(),
+                NumberOfRotations = rotationNumber
+            };
+            Reports.Add(report);
+            SortList();
+        }
+    }
+
+    private void HandleLogCategories()
+    {
+        
+    }
+    
     private void EmailAnonymization()       // censor, extra
     {
         

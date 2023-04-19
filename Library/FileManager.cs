@@ -8,10 +8,8 @@ public static class FileManager
     
     private const string ExtensionTxt = "*.txt";
 
-    //private static List<string> _logFilesList;
-    
     public static List<string> GetLogFiles(string folderPath, string pattern) {
-        return GetFiles(folderPath.Length > 0 ? folderPath : "../../../", ExtensionLog, "*.txt");
+        return GetFiles(folderPath.Length > 0 ? folderPath : "../../../", ExtensionLog, pattern);
     }
     
     private static List<string> GetFiles(string folderPath, params string[] patterns)
