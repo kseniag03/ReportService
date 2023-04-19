@@ -1,47 +1,26 @@
 ﻿namespace ReportService.Library;
 
-public static class FileSettings
+public static class FileManager
 {
-    public const string ExtensionJson = "*.json";
-    public const string ExtensionLog = "*.log";
-    public const string ExtensionTxt = "*.txt";
+    private const string ExtensionJson = "*.json";
     
-    public static List<string> GetLogFiles(string folderPath) {
-        
-        DirectoryInfo dirInfo = new(folderPath.Length > 0 ? folderPath : "../../../");
-        GetFiles(dirInfo, pattern);
-        
-        var files = Directory.GetFiles(folderPath, FileSettings.ExtensionLog);
-        return files.ToList();
+    private const string ExtensionLog = "*.log";
+    
+    private const string ExtensionTxt = "*.txt";
+
+    //private static List<string> _logFilesList;
+    
+    public static List<string> GetLogFiles(string folderPath, string pattern) {
+        return GetFiles(folderPath.Length > 0 ? folderPath : "../../../", ExtensionLog, "*.txt");
     }
     
-    /// <summary>
-    /// Получает список файлов директории по заданной маске, записывая его в выходной файл.
-    /// </summary>
-    /// <param name="root"> Корневая папка </param>
-    /// <param name="pattern"> Маска, по которой выбираются файлы </param>
-    private static void GetFiles(DirectoryInfo root, string pattern)
+    private static List<string> GetFiles(string folderPath, params string[] patterns)
     {
-        FileInfo[] files = null;
-        try
+        var files = new List<string>();
+        foreach (var pattern in patterns)
         {
-            files = root.GetFiles(pattern);
+            files.AddRange(Directory.EnumerateFiles(folderPath, pattern));
         }
-        catch (UnauthorizedAccessException)
-        {
-            s_output += $"Нет доступа к {root}" + '\n';
-        }
-        catch (DirectoryNotFoundException)
-        {
-            s_output += $"Директория {root} не найдена" + '\n';
-        }
-        catch (Exception exception)
-        {
-            s_output += $"Ошибка 500: {exception.Message}" + '\n';
-        }
-        foreach (var file in files)
-        {
-            s_output += file.Name + '\n';
-        }
+        return files;
     }
 }
