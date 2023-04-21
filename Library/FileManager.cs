@@ -9,8 +9,6 @@ public static class FileManager
     private const string ExtensionLog = "*.log";
     
     private const string ExtensionTxt = "*.txt";
-    
-    //private const Encoding = .
 
     public static List<string> GetLogFiles(string folderPath, string pattern) 
     {
@@ -51,9 +49,8 @@ public static class FileManager
                 lines.Add(line);
             }
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            //lines.Add($"ERROR-EXCEPTION: { exception.Message }");
             lines.Clear();
         }
         return lines;

@@ -1,4 +1,4 @@
 [23.03.2023 14:00:00.235][RequestHandler] New request with 42 items received from user vlad@redsquare.ru.
 [23.03.2023 15:00:01.243][RequestHandler] 666 from user 666@mail.ru.
 [23.03.2023 17:50:00.125][RequestHandler] received from lalala@edu.ru.
-[25.03.2023 18:00:00.235][RequestHandler] aaaaaa.
+[25.03.2023 18:00:00.235][Handler] aaaaaa.

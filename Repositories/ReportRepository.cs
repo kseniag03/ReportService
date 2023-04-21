@@ -1,29 +1,54 @@
-﻿using ReportService.Library;
+﻿using System.Text.Json;
+using ReportService.Library;
 using ReportService.Models;
 
 namespace ReportService.Repositories;
 
 public class ReportRepository: IReportRepository
 {
+    /// <summary>
+    /// Файл для хранения списка отчётов.
+    /// </summary>
+    private const string ReportsJsonFileName = "Reports.json";
+    
     private static readonly ReportComparer Comparer = new();
     
     private static readonly List<Report> Reports = new();
     
     private static readonly List<Log> Logs = new();
-
-    public Report CreateReport(string serviceName, string folderPath)   // why and why...
+    
+    public void ReadReportFromJsonFile()
     {
-        var report = new Report();
-        // logic !!!!!!!!!!!
-        CreateReportOnLogs(FileManager.GetLogFiles(folderPath, serviceName));
-        // logic !!!!!!!!!!!
-        Reports.Add(report);
-        SortList();
-        return report;
+        if (!File.Exists(ReportsJsonFileName))
+        {
+            File.Create(ReportsJsonFileName).Dispose();
+            Reports.Clear();
+            return;
+        }
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var jsonString = File.ReadAllText(ReportsJsonFileName);
+        Reports.Clear();
+        try
+        {
+            var jsonObject = JsonSerializer.Deserialize<List<Report>>(jsonString, options);
+            if (jsonObject != null) Reports.AddRange(jsonObject);
+        }
+        catch (Exception)
+        {
+            ClearList();
+        }
+    }
+
+    public void WriteReportToJsonFile()
+    {
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var jsonString = JsonSerializer.Serialize(Reports, options);
+        File.WriteAllText(ReportsJsonFileName, jsonString);
     }
 
     public IReadOnlyList<Report> GetAllReportsByServiceName(string serviceName, string folderPath)
     {
+        ClearList();
         CreateReportOnLogs(FileManager.GetLogFiles(folderPath, serviceName));
         return Reports;
     }
@@ -37,18 +62,13 @@ public class ReportRepository: IReportRepository
     {
         return Logs;
     }
-    
-    public void ReadJsonFile()
-    {
-        //_reportRepositoryImplementation.ReadJsonFile();
-    }
 
-    public void SortList()
+    private static void SortList()
     {
         Reports.Sort(Comparer);
     }
 
-    public void ClearList()
+    private static void ClearList()
     {
         Reports.Clear();
     }
@@ -56,39 +76,46 @@ public class ReportRepository: IReportRepository
     private void CreateReportOnLogs(List<string> files)
     {
         if (files.Count <= 0) return;
-
-        var fileInfo = new FileInfo(files[0]);
-        var parts = fileInfo.Name.Split('.');
-        var serviceName = parts[0];
-        if (!int.TryParse(parts[1], out var rotationNumber))
+        
+        var serviceNames = new Dictionary<string, List<string>>();
+        foreach (var file in files)
         {
-            rotationNumber = 0;
+            var fileInfo = new FileInfo(file);
+            var parts = fileInfo.Name.Split('.');
+            if (serviceNames.ContainsKey(parts[0]))
+            {
+                serviceNames[parts[0]].Add(file);
+            }
+            else
+            {
+                serviceNames[parts[0]] = new List<string>() { file };
+            }
         }
 
-        // need to open each file and get all written logs, parse them,
-        // get first and last dates and check categories and handle their count
-            
-        var report = new Report()
+        foreach (var kvp in serviceNames)
         {
-            ServiceName = serviceName,
-            FirstReportDate = DateTime.MaxValue,                  // change!!!
-            LastReportDate = DateTime.MinValue,                  // change!!!
-            NumberOfReports = new Dictionary<string, int>(),    // change!!!
-            NumberOfRotations = rotationNumber
-        };
+            // need to open each file and get all written logs, parse them,
+            // get first and last dates and check categories and handle their count
+            
+            var report = new Report()
+            {
+                ServiceName = kvp.Key,
+                FirstReportDate = DateTime.MaxValue,
+                LastReportDate = DateTime.MinValue,
+                NumberOfReports = new Dictionary<string, int>(),
+                NumberOfRotations = kvp.Value.Count - 1
+            };
         
-        HandleLogs(files, ref report);
+            HandleLogs(kvp.Value, ref report); // for each service name need their own files list
 
-        if (Reports.Contains(report)) return;
-        Reports.Add(report);
-        SortList();
+            if (Reports.Contains(report)) continue;
+            Reports.Add(report);
+            SortList();
+        }
     }
 
     private void HandleLogs(List<string> files, ref Report report)
     {
-        /*        foreach (var log in from file in files 
-                 select FileManager.GetFileContent(file) into content from line in content 
-                 where line is not null select LogParser.ParseLog(line)) */
         foreach (var file in files)
         {
             var content = FileManager.GetFileContent(file);
@@ -97,6 +124,7 @@ public class ReportRepository: IReportRepository
                 if (line is null) continue;
                 // принимаем за гарантию формат ввода логов: каждая линия -- лог: [Дата Время][Категория_записи] Текст_записи.
                 var log = LogParser.ParseLog(line);
+                if (Logs.Contains(log)) continue;
                 Logs.Add(log);
                 if (log.Date < report.FirstReportDate)
                 {
@@ -114,136 +142,8 @@ public class ReportRepository: IReportRepository
                 {
                     report.NumberOfReports[log.Category] = 1;
                 }
-
             }
         }
     }
     
 }
-
-/*
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.Serialization.Json;
-using System.Text.Json;
-
-namespace MessageService.Repositories
-{
-    /// <summary>
-    /// Класс хранилища данных пользователей.
-    /// </summary>
-    public class UserRepository : IUserRepository
-    {
-        /// <summary>
-        /// Файл для хранения списка пользователей.
-        /// </summary>
-        internal const string FileNameUser = "Users.json";
-        /// <summary>
-        /// Объект для генерации случайных чисел.
-        /// </summary>
-        private static readonly Random Random = new();
-        /// <summary>
-        /// Словарь зарегистрированных почт.
-        /// </summary>
-        private static readonly Dictionary<string, string> Emails = new();
-        /// <summary>
-        /// Список пользователей.
-        /// </summary>
-        private static List<User> _listOfUsers;
-
-        /// <summary>
-        /// Возвращает список всех пользователей.
-        /// </summary>
-        /// <returns> Список пользователей </returns>
-        public IReadOnlyList<User> GetAllUsers()
-        {
-            SortList();
-            return _listOfUsers;
-        }
-
-        /// <summary>
-        /// Создаёт нового пользователя и добавляет его в список.
-        /// </summary>
-        /// <returns> Нового случайного пользователя </returns>
-        public User GetRandomUser()
-        {
-            var userName = GetRandomName();
-            var email = GetRandomEmail(userName);
-
-            while (Emails.ContainsKey(email))
-            {
-                email = GetRandomEmail(userName + (Random.Next(1, 10000)).ToString());
-            }
-            Emails.Add(email, userName);
-
-            var user = new User()
-            {
-                UserName = userName,
-                Email = email
-            };
-
-            _listOfUsers.Add(user);
-            SortList();
-
-            return user;
-        }
-
-        /// <summary>
-        /// Читает json-файл и инициализирует список пользователей.
-        /// </summary>
-        public void ReadJsonFile()
-        {
-            using StreamReader sr = new(FileNameUser);
-            string json = sr.ReadToEnd();
-            _listOfUsers = JsonSerializer.Deserialize<List<User>>(json);
-        }
-
-        /// <summary>
-        /// Сортирует список пользователей и записывает его текущее состояние в json-файл.
-        /// </summary>
-        public void SortList()
-        {
-            _listOfUsers.Sort(new UserComparer());
-            using var fs = new FileStream(FileNameUser, FileMode.Create);
-            var formatter = new DataContractJsonSerializer(typeof(List<User>));
-            formatter.WriteObject(fs, _listOfUsers);
-        }
-
-        /// <summary>
-        /// Чистит список пользователей.
-        /// </summary>
-        public void ClearList()
-        {
-            _listOfUsers = new List<User>();
-        }
-
-        /// <summary>
-        /// Получает случайно сгенерированное имя (не осмысленное).
-        /// </summary>
-        /// <returns> Имя пользователя </returns>
-        public static string GetRandomName()
-        {
-            var length = Random.Next(2, 16);
-            var name = ((char)Random.Next('A', 'Z' + 1)).ToString();
-            for (var i = 0; i < length - 1; i++)
-            {
-                name += (char)Random.Next('a', 'z' + 1);
-            }
-            return name;
-        }
-
-        /// <summary>
-        /// Получает случайно сгенерированное имя (довольно осмысленное).
-        /// </summary>
-        /// <param name="name"> Имя пользователя </param>
-        /// <returns> Идентификатор пользователя </returns>
-        public static string GetRandomEmail(string name)
-        {
-            string[] domains = { "@mail.ru", "@gmail.com", "@yandex.ru", "@edu.hse.ru", "@bk.ru", "@analyst.ru" };
-            var email = name.ToLower() + domains[Random.Next(0, domains.Length)];
-            return email;
-        }      
-    }
-}
-*/

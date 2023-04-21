@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ReportService.Models;
+﻿using ReportService.Models;
 
 namespace ReportService.Repositories;
 
@@ -10,13 +8,15 @@ namespace ReportService.Repositories;
 public interface IReportRepository
 {
     /// <summary>
-    /// Создаёт новый отчёт и добавляет его в список.
+    /// Читает json-файл и инициализирует список.
     /// </summary>
-    /// <param name="serviceName"> Имя сервиса </param>
-    /// <param name="folderPath"> Путь к директории с файлами логов </param>
-    /// <returns> Новый отчёт </returns>
-    Report CreateReport(string serviceName, string folderPath);
-
+    void ReadReportFromJsonFile();
+    
+    /// <summary>
+    /// Сохраняет текущее состояние списка отчётов в json-файл.
+    /// </summary>
+    void WriteReportToJsonFile();
+    
     /// <summary>
     /// Возвращает список всех отчётов.
     /// </summary>
@@ -32,17 +32,8 @@ public interface IReportRepository
     IReadOnlyList<Report> GetAllReports();
 
     /// <summary>
-    /// Читает json-файл и инициализирует список.                           /// а надо ли?..
+    /// Возвращает список всех системных логов, которые обрабатывались в процессе генерации отчёта
     /// </summary>
-    void ReadJsonFile();
-
-    /// <summary>
-    /// Сортирует список и записывает его текущее состояние в json-файл.    /// !!!!!!!!!!! need to separate
-    /// </summary>
-    void SortList();
-
-    /// <summary>
-    /// Чистит список.
-    /// </summary>
-    void ClearList();
+    /// <returns> Список логов </returns>
+    public IReadOnlyList<Log> GetSystemLogs();
 }

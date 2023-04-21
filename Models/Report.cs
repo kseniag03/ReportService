@@ -14,17 +14,17 @@ public struct Report
 
     public override bool Equals(object? obj)
     {
-        if (!(obj is Report))
+        if (obj is not Report other)
         {
             return false;
         }
-        var other = (Report)obj;
-
-        return ServiceName == other.ServiceName
-               && FirstReportDate == other.FirstReportDate
-               && LastReportDate == other.LastReportDate
-               && NumberOfRotations == other.NumberOfRotations
+        return ServiceName == other.ServiceName && FirstReportDate == other.FirstReportDate && LastReportDate == other.LastReportDate && NumberOfRotations == other.NumberOfRotations
                && NumberOfReports.OrderBy(kvp => kvp.Key).SequenceEqual(other.NumberOfReports.OrderBy(kvp => kvp.Key));
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ServiceName, FirstReportDate, LastReportDate, NumberOfReports, NumberOfRotations);
     }
 
     public override string ToString()
