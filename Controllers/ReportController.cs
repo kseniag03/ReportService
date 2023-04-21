@@ -3,10 +3,16 @@ using ReportService.Repositories;
 
 namespace ReportService.Controllers;
 
+/// <summary>
+/// Класс-контроллер для реализации взаимодействия между хранилищем отчётов и API-сервисом.
+/// </summary>
 [ApiController]
 [Route("[controller]")]
 public class ReportController : ControllerBase
 {
+    /// <summary>
+    /// Регистратор сообщений и ошибок.
+    /// </summary>
     private readonly ILogger<ReportController> _logger;
 
     /// <summary>
@@ -38,11 +44,11 @@ public class ReportController : ControllerBase
         _logger.LogInformation("Processing request...");
         try
         {
-            var reports = _reportRepository.GetAllReportsByServiceName(serviceName, folderPath);
+            var reports = _reportRepository.GetReportsByServiceName(serviceName, folderPath);
             if (!reports.Any())
             {
-                _logger.LogInformation("Error: report list is empty");
-                return NotFound();
+                _logger.LogInformation("Report list is empty");
+                //return NotFound();
             }
             _logger.LogInformation("Request completed.");
             return Ok(reports);
@@ -55,7 +61,7 @@ public class ReportController : ControllerBase
     }
     
     /// <summary>
-    /// Получение списка отчётов.
+    /// Получение списка всех сгенерированных отчётов.
     /// </summary>
     /// <returns> Список отчётов </returns>
     [HttpGet("GET ALL REPORTS")]
@@ -67,8 +73,8 @@ public class ReportController : ControllerBase
             var reports = _reportRepository.GetAllReports();
             if (!reports.Any())
             {
-                _logger.LogInformation("Error: report list is empty");
-                return NotFound();
+                _logger.LogInformation("Report list is empty");
+                //return NotFound();
             }
             _logger.LogInformation("Request completed.");
             return Ok(reports);
@@ -93,8 +99,8 @@ public class ReportController : ControllerBase
             var reports = _reportRepository.GetSystemLogs();
             if (!reports.Any())
             {
-                _logger.LogInformation("Error: report list is empty");
-                return NotFound();
+                _logger.LogInformation("Log list is empty");
+                //return NotFound();
             }
             _logger.LogInformation("Request completed.");
             return Ok(reports);
@@ -105,7 +111,33 @@ public class ReportController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+    
+    /// <summary>
+    /// Очистка текущего списка отчётов и JSON-файла
+    /// </summary>
+    /// <returns> Сообщение об успешной очистке списка отчётов или об ошибке </returns>
+    [HttpDelete("CLEAR CURRENT REPORT LIST")]
+    public IActionResult ClearReportsList()
+    {
+        _logger.LogInformation("Processing request...");
+        try
+        {
+            _reportRepository.ClearList();
+            _reportRepository.WriteReportToJsonFile();
+            _logger.LogInformation("Request completed.");
+            return Ok("Report list has been cleared");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogInformation($"Error: { ex.Message }");
+            return BadRequest(ex.Message);
+        }
+    }
 
+    /// <summary>
+    /// Сохранение текущего списка отчётов в JSON-файл
+    /// </summary>
+    /// <returns> Сообщение об успешном сохранении списка отчётов или об ошибке </returns>
     [HttpPut("SAVE CURRENT REPORT LIST")]
     public IActionResult SaveReports()
     {

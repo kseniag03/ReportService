@@ -1,5 +1,8 @@
 ﻿namespace ReportService.Models;
 
+/// <summary>
+/// Структура лога.
+/// </summary>
 public struct Log
 {
     public DateTime Date { get; set; }

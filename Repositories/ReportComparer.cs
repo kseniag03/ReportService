@@ -2,6 +2,9 @@
 
 namespace ReportService.Repositories;
 
+/// <summary>
+/// Класс объекта для сравнения отчётов.
+/// </summary>
 public class ReportComparer : IComparer<Report>
 {
     /// <summary>

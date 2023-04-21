@@ -3,6 +3,9 @@ using ReportService.Models;
 
 namespace ReportService.Library;
 
+/// <summary>
+/// Класс для получения данных логов из строк файла.
+/// </summary>
 public static partial class LogParser
 {
     private static readonly Regex LogRegex = DefineRegex();

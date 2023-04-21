@@ -4,6 +4,9 @@ using ReportService.Models;
 
 namespace ReportService.Repositories;
 
+/// <summary>
+/// Основной класс для определения логики работы с генерацией отчётов.
+/// </summary>
 public class ReportRepository: IReportRepository
 {
     /// <summary>
@@ -11,26 +14,33 @@ public class ReportRepository: IReportRepository
     /// </summary>
     private const string ReportsJsonFileName = "Reports.json";
     
+    /// <summary>
+    /// Объект для сравнения отчётов.
+    /// </summary>
     private static readonly ReportComparer Comparer = new();
     
+    /// <summary>
+    /// Список отчётов.
+    /// </summary>
     private static readonly List<Report> Reports = new();
     
+    /// <summary>
+    /// Список логов, затронутых во время генерации отчётов.
+    /// </summary>
     private static readonly List<Log> Logs = new();
-    
+
     public void ReadReportFromJsonFile()
     {
         if (!File.Exists(ReportsJsonFileName))
         {
             File.Create(ReportsJsonFileName).Dispose();
-            Reports.Clear();
-            return;
         }
         var options = new JsonSerializerOptions { WriteIndented = true };
         var jsonString = File.ReadAllText(ReportsJsonFileName);
-        Reports.Clear();
         try
         {
             var jsonObject = JsonSerializer.Deserialize<List<Report>>(jsonString, options);
+            ClearList();
             if (jsonObject != null) Reports.AddRange(jsonObject);
         }
         catch (Exception)
@@ -43,10 +53,24 @@ public class ReportRepository: IReportRepository
     {
         var options = new JsonSerializerOptions { WriteIndented = true };
         var jsonString = JsonSerializer.Serialize(Reports, options);
-        File.WriteAllText(ReportsJsonFileName, jsonString);
+        if (File.Exists(ReportsJsonFileName))
+        {
+            File.WriteAllText(ReportsJsonFileName, jsonString);
+        }
+        else
+        {
+            File.CreateText(ReportsJsonFileName).Close();
+            File.WriteAllText(ReportsJsonFileName, jsonString);
+        }
     }
 
-    public IReadOnlyList<Report> GetAllReportsByServiceName(string serviceName, string folderPath)
+    
+    public void ClearList()
+    {
+        Reports.Clear();
+    }
+
+    public IReadOnlyList<Report> GetReportsByServiceName(string serviceName, string folderPath)
     {
         ClearList();
         CreateReportOnLogs(FileManager.GetLogFiles(folderPath, serviceName));
@@ -57,23 +81,25 @@ public class ReportRepository: IReportRepository
     {
         return Reports;
     }
-    
+
     public IReadOnlyList<Log> GetSystemLogs()
     {
         return Logs;
     }
 
+    /// <summary>
+    /// Сортирует список отчётов (по имени сервиса и самой ранней дате).
+    /// </summary>
     private static void SortList()
     {
         Reports.Sort(Comparer);
     }
 
-    private static void ClearList()
-    {
-        Reports.Clear();
-    }
-
-    private void CreateReportOnLogs(List<string> files)
+    /// <summary>
+    /// Получает список файлов для каждого имени сервиса, формирует начальный отчёт
+    /// </summary>
+    /// <param name="files"> Список файлов </param>
+    private static void CreateReportOnLogs(List<string> files)
     {
         if (files.Count <= 0) return;
         
@@ -114,36 +140,40 @@ public class ReportRepository: IReportRepository
         }
     }
 
-    private void HandleLogs(List<string> files, ref Report report)
+    /// <summary>
+    /// Формирует список логов, просматривает контент в файлах и меняет св-ва отчёта на актуальные
+    /// </summary>
+    /// <param name="files"> Список файлов по конкретному сервису </param>
+    /// <param name="report"> Отчёт для актуализации данных </param>
+    private static void HandleLogs(List<string> files, ref Report report)
     {
-        foreach (var file in files)
+        foreach (var log in 
+                 from file in files 
+                 select FileManager.GetFileContent(file) into content 
+                 from line in content 
+                 where line is not null 
+                 select LogParser.ParseLog(line))
         {
-            var content = FileManager.GetFileContent(file);
-            foreach (var line in content)
+            if (!Logs.Contains(log))
             {
-                if (line is null) continue;
-                // принимаем за гарантию формат ввода логов: каждая линия -- лог: [Дата Время][Категория_записи] Текст_записи.
-                var log = LogParser.ParseLog(line);
-                if (Logs.Contains(log)) continue;
                 Logs.Add(log);
-                if (log.Date < report.FirstReportDate)
-                {
-                    report.FirstReportDate = log.Date;
-                }
-                if (log.Date > report.LastReportDate)
-                {
-                    report.LastReportDate = log.Date;
-                }
-                if (report.NumberOfReports.ContainsKey(log.Category))
-                {
-                    ++report.NumberOfReports[log.Category];
-                }
-                else
-                {
-                    report.NumberOfReports[log.Category] = 1;
-                }
+            }
+            if (log.Date < report.FirstReportDate)
+            {
+                report.FirstReportDate = log.Date;
+            }
+            if (log.Date > report.LastReportDate)
+            {
+                report.LastReportDate = log.Date;
+            }
+            if (report.NumberOfReports.ContainsKey(log.Category))
+            {
+                ++report.NumberOfReports[log.Category];
+            }
+            else
+            {
+                report.NumberOfReports[log.Category] = 1;
             }
         }
     }
-    
 }

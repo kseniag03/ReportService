@@ -16,6 +16,11 @@ public interface IReportRepository
     /// Сохраняет текущее состояние списка отчётов в json-файл.
     /// </summary>
     void WriteReportToJsonFile();
+
+    /// <summary>
+    /// Чистит список отчётов.
+    /// </summary>
+    void ClearList();
     
     /// <summary>
     /// Возвращает список всех отчётов.
@@ -23,7 +28,7 @@ public interface IReportRepository
     /// <param name="serviceName"> Имя сервиса </param>
     /// <param name="folderPath"> Путь к директории с файлами логов </param>
     /// <returns> Список отчётов </returns>
-    IReadOnlyList<Report> GetAllReportsByServiceName(string serviceName, string folderPath);
+    IReadOnlyList<Report> GetReportsByServiceName(string serviceName, string folderPath);
     
     /// <summary>
     /// Возвращает список всех отчётов.

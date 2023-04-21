@@ -1,5 +1,8 @@
 ﻿namespace ReportService.Models;
 
+/// <summary>
+/// Структура отчёта.
+/// </summary>
 public struct Report
 {
     public string ServiceName { get; set; }
