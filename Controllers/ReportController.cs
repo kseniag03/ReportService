@@ -155,9 +155,9 @@ public class ReportController : ControllerBase
     }
     
     /// <summary>
-    /// Сохранение текущего списка отчётов в JSON-файл
+    /// Загрузка списка отчётов из JSON-файла
     /// </summary>
-    /// <returns> Сообщение об успешном сохранении списка отчётов или об ошибке </returns>
+    /// <returns> Сообщение об успешной загрузке списка отчётов или об ошибке </returns>
     [HttpPut("LOAD REPORT LIST FROM JSON")]
     public IActionResult LoadReports()
     {
