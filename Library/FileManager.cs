@@ -1,4 +1,6 @@
-﻿namespace ReportService.Library;
+﻿using System.Text;
+
+namespace ReportService.Library;
 
 public static class FileManager
 {
@@ -7,9 +9,19 @@ public static class FileManager
     private const string ExtensionLog = "*.log";
     
     private const string ExtensionTxt = "*.txt";
+    
+    //private const Encoding = .
 
-    public static List<string> GetLogFiles(string folderPath, string pattern) {
+    public static List<string> GetLogFiles(string folderPath, string pattern) 
+    {
+        // надо проверить путь и поменять слеши на правильные для текущей ос
         return GetFiles(folderPath.Length > 0 ? folderPath : "../../../", ExtensionLog, pattern);
+    }
+    
+    public static List<string?> GetFileContent(string filePath) 
+    {
+        // надо проверить путь и поменять слеши на правильные для текущей ос
+        return GetFileContent(filePath, Encoding.UTF8);
     }
     
     private static List<string> GetFiles(string folderPath, params string[] patterns)
@@ -20,5 +32,30 @@ public static class FileManager
             files.AddRange(Directory.EnumerateFiles(folderPath, pattern));
         }
         return files;
+    }
+    
+    /// <summary>
+    /// Читает построчно файл в заданной кодировке.
+    /// </summary>
+    /// <param name="path"> Путь к файлу </param>
+    /// <param name="encoding"> Заданная кодировка </param>
+    /// <returns> Список строк, содержащий данные файла </returns>
+    private static List<string?> GetFileContent(string path, Encoding encoding)
+    {
+        List<string?> lines = new();
+        try
+        {
+            using StreamReader sReader = new(path, encoding, false);
+            while (sReader.ReadLine() is { } line)
+            {
+                lines.Add(line);
+            }
+        }
+        catch (Exception exception)
+        {
+            //lines.Add($"ERROR-EXCEPTION: { exception.Message }");
+            lines.Clear();
+        }
+        return lines;
     }
 }

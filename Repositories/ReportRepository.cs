@@ -6,13 +6,16 @@ namespace ReportService.Repositories;
 public class ReportRepository: IReportRepository
 {
     private static readonly ReportComparer Comparer = new();
+    
     private static readonly List<Report> Reports = new();
+    
+    private static readonly List<Log> Logs = new();
 
     public Report CreateReport(string serviceName, string folderPath)   // why and why...
     {
         var report = new Report();
         // logic !!!!!!!!!!!
-        HandleLogs(FileManager.GetLogFiles(folderPath, serviceName));
+        CreateReportOnLogs(FileManager.GetLogFiles(folderPath, serviceName));
         // logic !!!!!!!!!!!
         Reports.Add(report);
         SortList();
@@ -21,7 +24,7 @@ public class ReportRepository: IReportRepository
 
     public IReadOnlyList<Report> GetAllReportsByServiceName(string serviceName, string folderPath)
     {
-        HandleLogs(FileManager.GetLogFiles(folderPath, serviceName));
+        CreateReportOnLogs(FileManager.GetLogFiles(folderPath, serviceName));
         return Reports;
     }
 
@@ -29,6 +32,12 @@ public class ReportRepository: IReportRepository
     {
         return Reports;
     }
+    
+    public IReadOnlyList<Log> GetSystemLogs()
+    {
+        return Logs;
+    }
+    
     public void ReadJsonFile()
     {
         //_reportRepositoryImplementation.ReadJsonFile();
@@ -44,42 +53,62 @@ public class ReportRepository: IReportRepository
         Reports.Clear();
     }
 
-    private void HandleLogs(List<string> files)
+    private void CreateReportOnLogs(List<string> files)
     {
-        if (files.Count > 0)
+        if (files.Count <= 0) return;
+        
+        var parts = files[0].Split('.');
+        var serviceName = parts[0];
+        if (!int.TryParse(parts[1], out var rotationNumber))
         {
-            var parts = files[0].Split('.');
-            var serviceName = parts[0];
-            if (!int.TryParse(parts[1], out var rotationNumber))
-            {
-                rotationNumber = 0;
-            }
+            rotationNumber = 0;
+        }
 
-            // need to open each file and get all written logs, parse them,
-            // get first and last dates and check categories and handle their count
+        // need to open each file and get all written logs, parse them,
+        // get first and last dates and check categories and handle their count
             
-            var report = new Report()
+        var report = new Report()
+        {
+            ServiceName = serviceName,
+            FirstReportDate = DateTime.Today,                   // change!!!
+            LastReportDate = DateTime.Today,                    // change!!!
+            NumberOfReports = new Dictionary<string, int>(),    // change!!!
+            NumberOfRotations = rotationNumber
+        };
+        
+        HandleLogs(files, report);
+        
+        Reports.Add(report);
+        SortList();
+    }
+
+    private void HandleLogs(List<string> files, Report report)
+    {
+        /*        foreach (var log in from file in files 
+                 select FileManager.GetFileContent(file) into content from line in content 
+                 where line is not null select LogParser.ParseLog(line)) */
+        foreach (var file in files)
+        {
+            var content = FileManager.GetFileContent(file);
+            foreach (var line in content)
             {
-                ServiceName = serviceName,
-                FirstReportDate = DateTime.Today,                   // change!!!
-                LastReportDate = DateTime.Today,                    // change!!!
-                NumberOfReports = new Dictionary<string, int>(),
-                NumberOfRotations = rotationNumber
-            };
-            Reports.Add(report);
-            SortList();
+                if (line is null) continue;
+                // принимаем за гарантию формат ввода логов: каждая линия -- лог: [Дата Время][Категория_записи] Текст_записи.
+                var log = LogParser.ParseLog(line);
+                Logs.Add(log);
+                if (log.Date < report.FirstReportDate)
+                {
+                    report.FirstReportDate = log.Date;
+                }
+                if (log.Date > report.LastReportDate)
+                {
+                    report.LastReportDate = log.Date;
+                }
+                ++report.NumberOfReports[log.Category];
+            }
         }
     }
-
-    private void HandleLogCategories()
-    {
-        
-    }
     
-    private void EmailAnonymization()       // censor, extra
-    {
-        
-    }
 }
 
 /*
