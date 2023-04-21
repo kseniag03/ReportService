@@ -29,7 +29,6 @@ public class ReportController : ControllerBase
     {
         _reportRepository = reportRepository;
         _logger = logger;
-        _reportRepository.ReadReportFromJsonFile();
     }
 
     /// <summary>
@@ -41,7 +40,7 @@ public class ReportController : ControllerBase
     [HttpGet("GET REPORT BY SERVICE NAME")]
     public IActionResult GetReportsByServiceName(string serviceName, string folderPath)
     {
-        _logger.LogInformation("Processing request...");
+        _logger.LogInformation("Processing GET request...");
         try
         {
             var reports = _reportRepository.GetReportsByServiceName(serviceName, folderPath);
@@ -50,7 +49,7 @@ public class ReportController : ControllerBase
                 _logger.LogInformation("Report list is empty");
                 //return NotFound();
             }
-            _logger.LogInformation("Request completed.");
+            _logger.LogInformation("GET request was completed.");
             return Ok(reports);
         }
         catch (Exception ex)
@@ -67,7 +66,7 @@ public class ReportController : ControllerBase
     [HttpGet("GET ALL REPORTS")]
     public IActionResult GetAllReports()
     {
-        _logger.LogInformation("Processing request...");
+        _logger.LogInformation("Processing GET-ALL-REPORTS request...");
         try
         {
             var reports = _reportRepository.GetAllReports();
@@ -76,7 +75,7 @@ public class ReportController : ControllerBase
                 _logger.LogInformation("Report list is empty");
                 //return NotFound();
             }
-            _logger.LogInformation("Request completed.");
+            _logger.LogInformation("GET-ALL-REPORTS request was completed.");
             return Ok(reports);
         }
         catch (Exception ex)
@@ -93,7 +92,7 @@ public class ReportController : ControllerBase
     [HttpGet("GET ALL LOGS")]
     public IActionResult GetAllLogs()
     {
-        _logger.LogInformation("Processing request...");
+        _logger.LogInformation("Processing GET-ALL-LOGS request...");
         try
         {
             var reports = _reportRepository.GetSystemLogs();
@@ -102,7 +101,7 @@ public class ReportController : ControllerBase
                 _logger.LogInformation("Log list is empty");
                 //return NotFound();
             }
-            _logger.LogInformation("Request completed.");
+            _logger.LogInformation("GET-ALL-LOGS request was completed.");
             return Ok(reports);
         }
         catch (Exception ex)
@@ -119,12 +118,12 @@ public class ReportController : ControllerBase
     [HttpDelete("CLEAR CURRENT REPORT LIST")]
     public IActionResult ClearReportsList()
     {
-        _logger.LogInformation("Processing request...");
+        _logger.LogInformation("Processing CLEAR request...");
         try
         {
             _reportRepository.ClearList();
             _reportRepository.WriteReportToJsonFile();
-            _logger.LogInformation("Request completed.");
+            _logger.LogInformation("CLEAR request was completed.");
             return Ok("Report list has been cleared");
         }
         catch (Exception ex)
@@ -138,15 +137,36 @@ public class ReportController : ControllerBase
     /// Сохранение текущего списка отчётов в JSON-файл
     /// </summary>
     /// <returns> Сообщение об успешном сохранении списка отчётов или об ошибке </returns>
-    [HttpPut("SAVE CURRENT REPORT LIST")]
+    [HttpPut("SAVE CURRENT REPORT LIST TO JSON")]
     public IActionResult SaveReports()
     {
-        _logger.LogInformation("Processing request...");
+        _logger.LogInformation("Processing SAVE request...");
         try
         {
             _reportRepository.WriteReportToJsonFile();
-            _logger.LogInformation("Request completed.");
+            _logger.LogInformation("SAVE request was completed.");
             return Ok("Report list has been saved");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogInformation($"Error: { ex.Message }");
+            return BadRequest(ex.Message);
+        }
+    }
+    
+    /// <summary>
+    /// Сохранение текущего списка отчётов в JSON-файл
+    /// </summary>
+    /// <returns> Сообщение об успешном сохранении списка отчётов или об ошибке </returns>
+    [HttpPut("LOAD REPORT LIST FROM JSON")]
+    public IActionResult LoadReports()
+    {
+        _logger.LogInformation("Processing LOAD request...");
+        try
+        {
+            _reportRepository.ReadReportFromJsonFile();
+            _logger.LogInformation("LOAD request was completed.");
+            return Ok("Report list has been loaded");
         }
         catch (Exception ex)
         {
