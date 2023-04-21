@@ -56,8 +56,9 @@ public class ReportRepository: IReportRepository
     private void CreateReportOnLogs(List<string> files)
     {
         if (files.Count <= 0) return;
-        
-        var parts = files[0].Split('.');
+
+        var fileInfo = new FileInfo(files[0]);
+        var parts = fileInfo.Name.Split('.');
         var serviceName = parts[0];
         if (!int.TryParse(parts[1], out var rotationNumber))
         {
@@ -70,19 +71,20 @@ public class ReportRepository: IReportRepository
         var report = new Report()
         {
             ServiceName = serviceName,
-            FirstReportDate = DateTime.Today,                   // change!!!
-            LastReportDate = DateTime.Today,                    // change!!!
+            FirstReportDate = DateTime.MaxValue,                  // change!!!
+            LastReportDate = DateTime.MinValue,                  // change!!!
             NumberOfReports = new Dictionary<string, int>(),    // change!!!
             NumberOfRotations = rotationNumber
         };
         
-        HandleLogs(files, report);
-        
+        HandleLogs(files, ref report);
+
+        if (Reports.Contains(report)) return;
         Reports.Add(report);
         SortList();
     }
 
-    private void HandleLogs(List<string> files, Report report)
+    private void HandleLogs(List<string> files, ref Report report)
     {
         /*        foreach (var log in from file in files 
                  select FileManager.GetFileContent(file) into content from line in content 
@@ -104,7 +106,15 @@ public class ReportRepository: IReportRepository
                 {
                     report.LastReportDate = log.Date;
                 }
-                ++report.NumberOfReports[log.Category];
+                if (report.NumberOfReports.ContainsKey(log.Category))
+                {
+                    ++report.NumberOfReports[log.Category];
+                }
+                else
+                {
+                    report.NumberOfReports[log.Category] = 1;
+                }
+
             }
         }
     }
