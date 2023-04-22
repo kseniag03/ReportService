@@ -8,8 +8,17 @@ namespace ReportService.Library;
 /// </summary>
 public static partial class LogParser
 {
+    /// <summary>
+    /// Регулярное выражение для лога.
+    /// </summary>
     private static readonly Regex LogRegex = DefineRegex();
 
+    /// <summary>
+    /// Парсит строку с логом и возвращает объект структуры.
+    /// </summary>
+    /// <param name="logString"> Строка </param>
+    /// <returns> Объект лога </returns>
+    /// <exception cref="ArgumentException"> Если передаётся строка не заданного формата </exception>
     public static Log ParseLog(string logString)
     {
         var match = LogRegex.Match(logString);
@@ -26,6 +35,11 @@ public static partial class LogParser
         };
     }
     
+    /// <summary>
+    /// Метод для частичного сокрытия данных пользователей
+    /// </summary>
+    /// <param name="text"> Текст лога </param>
+    /// <returns> Обновлённый текст лога </returns>
     private static string EmailAnonymization(string text)
     {
         var matches = DefineEmailRegex().Matches(text);
@@ -40,9 +54,17 @@ public static partial class LogParser
         return text;
     }
 
+    /// <summary>
+    /// Схема регулярного выражения для вычленения лога из строки (формат из условия).
+    /// </summary>
+    /// <returns> Регулярное выражение </returns>
     [GeneratedRegex("^\\[(?<date>[^\\]]+)\\]\\[(?<category>[^\\]]+)\\] (?<text>.+)$")]
     private static partial Regex DefineRegex();
     
+    /// <summary>
+    /// Схема регулярного выражения для вычленения электронных почт из текста лога.
+    /// </summary>
+    /// <returns> Регулярное выражение </returns>
     [GeneratedRegex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")]
     private static partial Regex DefineEmailRegex();
 }

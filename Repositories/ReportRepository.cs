@@ -63,7 +63,6 @@ public class ReportRepository: IReportRepository
             File.WriteAllText(ReportsJsonFileName, jsonString);
         }
     }
-
     
     public void ClearList()
     {
