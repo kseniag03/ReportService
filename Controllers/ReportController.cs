@@ -122,7 +122,6 @@ public class ReportController : ControllerBase
         try
         {
             _reportRepository.ClearList();
-            _reportRepository.WriteReportToJsonFile();
             _logger.LogInformation("CLEAR request was completed.");
             return Ok("Report list has been cleared");
         }
